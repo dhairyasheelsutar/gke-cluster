@@ -61,13 +61,13 @@ module "cloud-nat" {
 
 data "http" "cloud-shell-ip" {
   method = "GET"
-  url = "http://ipinfo.io/ip"
+  url    = "http://ipinfo.io/ip"
 }
 
 # Deploy private gke cluster
 module "gke_vpc" {
   source                             = "terraform-google-modules/kubernetes-engine/google//modules/beta-private-cluster"
-  count = var.vpc == null ? 1 : 0
+  count                              = var.vpc == null ? 1 : 0
   name                               = "gke-cluster-uc1-01"
   project_id                         = var.project
   regional                           = true
@@ -85,7 +85,7 @@ module "gke_vpc" {
   enable_private_endpoint            = false
   master_ipv4_cidr_block             = "172.16.0.0/28"
   grant_registry_access              = true
-  master_authorized_networks         = [{cidr_block = "${data.http.cloud-shell-ip.response_body}/32", display_name = "cloud-shell"}]
+  master_authorized_networks         = [{ cidr_block = "${data.http.cloud-shell-ip.response_body}/32", display_name = "cloud-shell" }]
   create_service_account             = false
   node_pools = [
     {
@@ -110,7 +110,7 @@ module "gke_vpc" {
 
 module "gke_no_vpc" {
   source                             = "terraform-google-modules/kubernetes-engine/google//modules/beta-private-cluster"
-  count = var.vpc == null ? 0 : 1
+  count                              = var.vpc == null ? 0 : 1
   name                               = "gke-cluster-uc1-01"
   project_id                         = var.project
   regional                           = true
@@ -128,7 +128,7 @@ module "gke_no_vpc" {
   enable_private_endpoint            = false
   master_ipv4_cidr_block             = "172.16.0.0/28"
   grant_registry_access              = true
-  master_authorized_networks         = [{cidr_block = "${data.http.cloud-shell-ip.response_body}/32", display_name = "cloud-shell"}]
+  master_authorized_networks         = [{ cidr_block = "${data.http.cloud-shell-ip.response_body}/32", display_name = "cloud-shell" }]
   create_service_account             = false
   node_pools = [
     {

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+        - image: wordpress:5.7.1-php7.3-apache
+          name: wordpress
+          env:
+          - name: WORDPRESS_DB_HOST
+            value: mysql-svc.default.svc.cluster.local:3306
+          - name: WORDPRESS_DB_USER
+            valueFrom:
+              configMapKeyRef:
+                name: mysql
+                key: DB_USERNAME
+          - name: WORDPRESS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql
+                key: DB_PASSWORD
+          ports:
+            - containerPort: 80
+              name: wordpress
+          volumeMounts:
+            - name: wp-storage
+              mountPath: /var/www/html
+      volumes:
+        - name: wp-storage
+          persistentVolumeClaim:
+            claimName: nfs-pvc
+---
+# Wordpress scaling
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: wp-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: wordpress
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+---
+# Wordpress service
+apiVersion: v1
+kind: Service
+metadata:
+  name: wp-svc
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: ClusterIP
+  selector:
+    app: wordpress
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wp-ingress
+spec:
+  defaultBackend:
+    service:
+      name: wp-svc
+      port:
+        number: 80

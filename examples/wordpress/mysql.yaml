@@ -41,7 +41,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: mysql
-        image: mysql:8.0.31
+        image: mysql:5.7
         env:
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
@@ -62,11 +62,11 @@ spec:
         - containerPort: 3306
           name: mysql
         volumeMounts:
-        - name: data
+        - name: db
           mountPath: /var/lib/mysql
   volumeClaimTemplates:
   - metadata:
-      name: data
+      name: db
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: "ssd"

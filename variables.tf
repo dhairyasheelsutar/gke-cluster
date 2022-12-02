@@ -24,14 +24,14 @@ variable "subnet" {
 }
 
 variable "ip_range_pods" {
-    type = string
-    description = "Secondary CIDR Range for pods. If not provided, new range will be provisioned"
-    default = null
+  type        = string
+  description = "Secondary CIDR Range for pods. If not provided, new range will be provisioned"
+  default     = null
 }
 
 
 variable "ip_range_services" {
-    type = string
-    description = "Secondary CIDR Range for services. If not provided, new range will be provisioned"
-    default = null
+  type        = string
+  description = "Secondary CIDR Range for services. If not provided, new range will be provisioned"
+  default     = null
 }

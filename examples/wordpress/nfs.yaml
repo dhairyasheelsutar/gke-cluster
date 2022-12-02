@@ -1,18 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nfs-svc
+  labels:
+    app: nfs-svc
+spec:
+  ports:
+  - name: nfs
+    port: 2049
+  - name: mountd
+    port: 20048
+  - name: rpcbind
+    port: 111
+  type: ClusterIP
+  selector:
+    app: nfs
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: nfs-server
+  name: nfs
 spec:
   selector:
     matchLabels:
-      app: nfs-server
+      app: nfs
+  serviceName: "nfs-svc"
+  replicas: 1
+  minReadySeconds: 10
   template:
     metadata:
       labels:
-        app: nfs-server
+        app: nfs
     spec:
+      terminationGracePeriodSeconds: 10
       containers:
-      - name: nfs-server
+      - name: nfs
         image: k8s.gcr.io/volume-nfs:0.8
         ports:
         - name: nfs
@@ -25,13 +47,38 @@ spec:
           privileged: true
         volumeMounts:
         - name: storage
-          mountPath: /exports
-      volumeClaimTemplates:
-      - metadata:
-          name: storage
-        spec:
-          accessModes: [ "ReadWriteOnce" ]
-          storageClassName: "ssd"
-          resources:
-            requests:
-              storage: 10Gi
+          mountPath: /var/www/html
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "ssd"
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: nfs-svc.default.svc.cluster.local
+    path: /
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 10Gi
