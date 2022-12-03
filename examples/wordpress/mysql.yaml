@@ -3,6 +3,7 @@ kind: StorageClass
 metadata:
   name: ssd
 provisioner: kubernetes.io/gce-pd
+allowVolumeExpansion: true
 parameters:
   type: pd-ssd
   fstype: ext4
@@ -58,6 +59,10 @@ spec:
         ports:
         - containerPort: 3306
           name: mysql
+        resources:
+          requests:
+            cpu: "256m"
+            memory: "512Mi"
         volumeMounts:
         - name: db
           mountPath: /var/lib/mysql
