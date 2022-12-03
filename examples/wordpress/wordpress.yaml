@@ -15,11 +15,14 @@ spec:
         app: wordpress
     spec:
       containers:
-        - image: wordpress:5.7.1-php7.3-apache
+        - image: wordpress:6.1.1
           name: wordpress
           env:
           - name: WORDPRESS_DB_HOST
             value: mysql-svc.default.svc.cluster.local:3306
+          - name: WORDPRESS_CONFIG_EXTRA
+            value: |
+              define('WP_REDIS_HOST', 'redis-svc.default.svc.cluster.local' );
           - name: WORDPRESS_DB_USER
             valueFrom:
               configMapKeyRef:
@@ -36,6 +39,13 @@ spec:
           volumeMounts:
             - name: wp-storage
               mountPath: /var/www/html
+          readinessProbe:
+            initialDelaySeconds: 5
+            successThreshold: 2
+            failureThreshold: 3
+            httpGet:
+              path: /index.html
+              port: 80
       volumes:
         - name: wp-storage
           persistentVolumeClaim:
@@ -55,6 +65,18 @@ spec:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
 ---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: wp-cdn
+spec:
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: false
+      includeQueryString: false
+---
 # Wordpress service
 apiVersion: v1
 kind: Service
@@ -62,6 +84,7 @@ metadata:
   name: wp-svc
   annotations:
     cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: '{"ports": {"80":"wp-cdn"}}'
 spec:
   type: ClusterIP
   selector:
